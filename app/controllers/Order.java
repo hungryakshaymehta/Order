@@ -25,6 +25,9 @@ import java.util.List;
 import play.db.jpa.Transactional;
 import play.db.jpa.JPA.*;
 import play.db.jpa.*;
+//import utils.GeolocationHelper;
+//import com.edulify.modules.geolocation.Geolocation;
+//import com.edulify.modules.geolocation.InvalidAddressException;
 
 public class Order extends Controller {
 
@@ -37,16 +40,20 @@ public static String dtype="%";
 public static String dmode="%";
 public static String dserves="%";
 public static String message="distance";
+public static Float dlatitude=99999.9f;
+public static Float latitude=99999.9f;
+public static Float dlongitude=99999.9f;
+public static String dcategory="%";
+public static String clause="";
+public static int dindex=1;
+public static String sorts="rating";
 public static List<String> cuisines;
-public static int clause=0;
-	
 private static Form<Search> searchForm=Form.form(Search.class);
 private static Form<Cuisine> cuisineForm=Form.form(Cuisine.class);
 private static Form<Vendor> vendorForm=Form.form(Vendor.class);
-	
+public static Arrays cuisns[] = new Arrays[20];	
     //public static  Page<Vendor> vendors;
 	public static List<Vendor> vendors = new ArrayList<Vendor>();
-	//public static List<object[]> vendors = new ArrayList<object[]>();
 	
 	@Transactional
     public static Result index() {
@@ -54,25 +61,83 @@ private static Form<Vendor> vendorForm=Form.form(Vendor.class);
 	return ok(views.html.geo.render());
     }
 	
+	@Transactional
+	public static Result page(int index) {
+	dindex=index;
+	/*if(dlatitude.equals(latitude)){
+	vendors = Vendor.find_page(sorts,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory,dindex);
+	}
+	else {
+	vendors = Vendor.geo_find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dlatitude,dlongitude,dcategory,dindex);
+	}
+	//sort(sorts);*/
+	//cuisines = Cuisine.find();
+	return ok(views.html.list_sel.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
+	}
 	
 	@Transactional
 	public static Result list() {
-	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine);
+	vendors = Vendor.find_page(sorts,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory,dindex);
 	cuisines = Cuisine.find();
-	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,clause,cuisineForm));
+	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
 	}
 	
 	@Transactional
 	public static Result search() {
+	dcuisine="%";
+	dcost1=0;
+	dcost2=10000;
+	dserves="%";
+	dcategory="%";
+	dtype="%";
+	dmode="%";
+	dindex=1;
 	Form<Search> boundForm=searchForm.bindFromRequest();
 	Search search=boundForm.get();
 	searchForm=searchForm.fill(search);
-	ddistrict=search.district;
+	//ddistrict=search.district;
+	dlatitude=search.latitude;
+	dlongitude=search.longitude;
 	dspeciality=search.speciality;
-	vendors=Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine);
-	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,clause,cuisineForm));
+	if(dlatitude == null){
+	return badRequest(views.html.search.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
 	}
-	
+	else {
+	System.out.println("latitude:" + dlatitude + "longitude:" + dlongitude);
+	cuisines = Cuisine.find();
+	if(dlatitude.equals(latitude)){
+	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory);
+	}
+	else {
+	vendors = Vendor.geo_find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dlatitude,dlongitude,dcategory,dindex);
+	}
+	/*if(ddistrict!=null) {
+	try {
+        Geolocation geolocation = GeolocationHelper.getGeolocation(addr);
+        if (geolocation == null) {
+          return badRequest(views.html.search.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
+        }
+		dlatitude=geolocation.getLatitude();
+		dlongitude=geolocation.getLongitude();
+        /*return ok(geoData.render(addr,
+                                 geolocation.getIp(),
+                                 geolocation.getCountryCode(),
+                                 geolocation.getCountryName(),
+                                 geolocation.getRegionCode(),
+                                 geolocation.getRegionName(),
+                                 geolocation.getCity(),
+                                 geolocation.getLatitude(),
+                                 geolocation.getLongitude()));
+      } catch (InvalidAddressException ex) {
+        return ok(index.render("Invalid ip"));
+      }
+	  vendors = Vendor.geo_find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dlatitude,dlongitude,dcategory,dindex);
+	  }*/
+	//vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory);
+	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
+	}
+	}
+
 	@Transactional
 	public static Result filter() {
 	Form<Vendor> boundForm=vendorForm.bindFromRequest();
@@ -80,63 +145,127 @@ private static Form<Vendor> vendorForm=Form.form(Vendor.class);
 	vendorForm=vendorForm.fill(vend);
 	ddistrict=vend.district;
 	dspeciality=vend.speciality;
-	vendors=Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine);
-	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,clause,cuisineForm));
+	vendors=Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory);
+	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
 	}
 	
 	@Transactional
 	public static Result filter_serves(String serves) {
 	dserves=serves;
-	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine);
-	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,clause,cuisineForm));
+	dindex=0;
+	if(dlatitude.equals(latitude)){
+	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory);
 	}
+	else {
+	vendors = Vendor.geo_find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dlatitude,dlongitude,dcategory,dindex);
+	}
+	sort(sorts);
+	return ok(views.html.list_sel.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
+	}
+	
+	@Transactional
+	public static Result filter_location(String location) {
+	ddistrict=location;
+	dlatitude=latitude;
+	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory);
+	return ok(views.html.list_sel.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
+	}
+	
+	
+	@Transactional
+	public static Result filter_item(String item) {
+	dspeciality=item;
+	dindex=0;
+	if(dlatitude.equals(latitude)){
+	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory);
+	}
+	else {
+	vendors = Vendor.geo_find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dlatitude,dlongitude,dcategory,dindex);
+	}
+	sort(sorts);
+	return ok(views.html.list_sel.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
+	}
+	
 	
 	@Transactional
 	public static Result filter_cost(int cost1,int cost2) {
 	dcost1=cost1;
 	dcost2=cost2;
-	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine);
-	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,clause,cuisineForm));
+	dindex=0;
+	if(dlatitude.equals(latitude)){
+	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory);
+	}
+	else {
+	vendors = Vendor.geo_find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dlatitude,dlongitude,dcategory,dindex);
+	}
+	sort(sorts);
+	return ok(views.html.list_sel.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
 	}
 	
 	@Transactional
-	public static Result filter_cuisine(String cuisine) {
-	dcuisine=cuisine;
-	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine);
-	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,clause,cuisineForm));
+	public static Result filter_cuisine(String cuisin) {
+	/*String[] cuisArray = cuisin.split(",");
+	clause="";
+	for(int i=0;i<cuisArray.length;i++){
+	if(i==0)
+	clause += cuisArray[i];
+	else
+	clause += " or name like " + cuisArray[i];
+	}*/
+	dcuisine=cuisin;
+	dindex=0;
+	if(dlatitude.equals(latitude)){
+	vendors = Vendor.find_page(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory,dindex);
 	}
+	else {
+	vendors = Vendor.geo_find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dlatitude,dlongitude,dcategory,dindex);
+	}
+	sort(sorts);
+	return ok(views.html.list_sel.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
+	}
+		
+	
 	
 	@Transactional
-	public static Result filter_res() {
-	Form<Cuisine> boundForm=cuisineForm.bindFromRequest();
-	if(boundForm.hasErrors()){
-	flash("error", "Please correct errors above.");
-	return badRequest(views.html.search.render(vendors,searchForm,cuisines,vendorForm,clause,cuisineForm));
+	public static Result filter_category(String cat) {
+	dcategory=cat;
+	dindex=0;
+	if(dlatitude.equals(latitude)){
+	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory);
 	}
 	else {
-	Cuisine cui=boundForm.get();
-	flash("success", "filtered");
-	cui.cuisines.removeAll(Collections.singleton(null));
-	cuisineForm=cuisineForm.fill(cui);
-    for(String t: cui.cuisines) {
-	if(t.equals("")){}
-	else {
-	//clause += t + "";
-	clause=cui.cuisines.size();
+	vendors = Vendor.geo_find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dlatitude,dlongitude,dcategory,dindex);
 	}
+	sort(sorts);
+	return ok(views.html.list_sel.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
 	}
-	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine);
-	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,clause,cuisineForm));
-	}}
+	
+	
+	@Transactional
+	public static Result list_sel() {
+	dindex=0;
+	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory);
+	cuisines = Cuisine.find();
+	return ok(views.html.list_sel.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
+	}
+	
 	
 	@Transactional
 	public static Result filter_mode(String mode) {
+	dindex=0;
 	dmode=mode;
-	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine);
-	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,clause,cuisineForm));
+	if(dlatitude.equals(latitude)){
+	vendors = Vendor.find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dcategory);
+	}
+	else {
+	vendors = Vendor.geo_find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dlatitude,dlongitude,dcategory,dindex);
+	}
+	return ok(views.html.list_sel.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
 	}
 	
 	public static Result sort(String sort_option) {
+	sorts=sort_option;
+	dindex=1;
 	if(sort_option.equals("cost_desc")) {
 	Collections.sort(vendors, new Vendor.costComparator());
 	}
@@ -149,8 +278,7 @@ private static Form<Vendor> vendorForm=Form.form(Vendor.class);
 	else {
 	Collections.sort(vendors);
 	}
-	message=sort_option;
-	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,clause,cuisineForm));
+	return ok(views.html.list_sel.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
 	}
 	
 	public static Result javascriptRoutes() {
@@ -158,15 +286,39 @@ private static Form<Vendor> vendorForm=Form.form(Vendor.class);
     return ok(
         Routes.javascriptRouter("jsRoutes",
             controllers.routes.javascript.Order.sort(),
-			controllers.routes.javascript.Order.list()
+			controllers.routes.javascript.Order.list(),
+			controllers.routes.javascript.Order.filter_cuisine(),
+			controllers.routes.javascript.Order.filter_cost(),
+			controllers.routes.javascript.Order.filter_mode(),
+			controllers.routes.javascript.Order.filter_serves(),
+			controllers.routes.javascript.Order.filter_category(),
+			controllers.routes.javascript.Order.filter_location(),
+			controllers.routes.javascript.Order.filter_item(),
+			controllers.routes.javascript.Order.geo(),
+			controllers.routes.javascript.Order.page(),
+			controllers.routes.javascript.Order.geo_def()
         )
     );
 }
+
     @Transactional
     public static Result geo(Float lat, Float lon) {
 	cuisines = Cuisine.find();
-	vendors = Vendor.geo_find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,lat,lon);
-	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,clause,cuisineForm));
+	ddistrict="%";
+	dlatitude=lat;
+	dlongitude=lon;
+	vendors = Vendor.geo_find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dlatitude,dlongitude,dcategory,dindex);
+	return ok(views.html.list_sel.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
+	}
+	
+	@Transactional
+    public static Result geo_def(Float lat, Float lon) {
+	cuisines = Cuisine.find();
+	ddistrict="%";
+	dlatitude=lat;
+	dlongitude=lon;
+	vendors = Vendor.geo_find(ddistrict,dspeciality,dcost1,dcost2,dmode,dserves,dcuisine,dlatitude,dlongitude,dcategory,dindex);
+	return ok(views.html.search.render(vendors,searchForm,cuisines,vendorForm,dindex,cuisineForm));
 	}
 	
 	public static Result showMap() {

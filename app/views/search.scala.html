@@ -1,8 +1,9 @@
-@(vendor:List[Vendor],search:Form[Search],message:List[String],vendorForm:Form[Vendor],clause:Integer,cuisineForm:Form[Cuisine])
+@(vendor:List[Vendor],search:Form[Search],cuisines:List[String],vendorForm:Form[Vendor],index:Integer,cuisineForm:Form[Cuisine])
 @import helper._
 @import helper.twitterBootstrap._
-<div id="container" style="width:1340px">
-<div id="header" style="background-color:cyan" align="center">
+@import java.math.BigInteger; var till=0; var last=0;
+
+<div id="container" style="margin-left:25px;margin-right:25px;margin-top:5px;">
 <script type="text/javascript" src='@routes.Assets.at("javascripts/tabs.js")'></script>
 <script type="text/javascript" src='@routes.Assets.at("javascripts/jquery-1.9.0.min")'></script>
 <script type="text/javascript" src='@routes.Assets.at("javascripts/jquery-ui-1.11.1.custom/jquery-ui.min")'></script>
@@ -12,34 +13,93 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"  type="text/javascript"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.14/jquery-ui.min.js"  type="text/javascript"></script>
 <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.14/themes/ui-darkness/jquery-ui.css" />
+<div id="header" style="background-color:cyan;height:100px" align="center">
 @main(Messages("Order")) {
-        @form(routes.Order.search()) {
+        @*form(routes.Order.search()) {*@
        <fieldset>
-		<table><tr>
-		<td>@select(field = search("city"), options = Seq(""->"", "mumbai"->"Mumbai"))</td>
-        <!--input type="text" id="district" name="district" style="height:32px" placeholder="Where? Eg: Malad, Bandra" value="@search.data.get("district")"></input>
-		<input type="text" id="speciality" name="speciality" style="height:32px" placeholder="What? Eg: Dosa, Pasta" value="@search.data.get("speciality")"></input-->
-		<td>@select(field = search("district"), options = Seq(""->"", "bandra"->"Bandra","malad"->"Malad","goregaon"->"Goregaon", "Andheri"->"Andheri"),'label->"Location")</td>
-		<td>@select(field = search("speciality"), options = Seq(""->"", "sandwitch"->"Sandwitch","pasta"->"Pasta","pani puri"->"Pani Puri", "tava pulav"->"Tava Pulav","pav bhaji"->"Pav Bhaji","pizza"->"Pizza","dosa"->"Dosa","paneer biryani"->"Paneer Biryani","haka noodles"->"Haka Noodles"))</td>
-        <td><input type="submit" class="btn" style="height:32px" value="Search"></input></td>
-		<td>&nbsp</td>
-		<td><input type="button" class="btn" value="My Location" onclick="showlocation()" /></td>
+		<div style="float:left;margin-left:50px;margin-top:8px;width:110px">
+		<select id="city" style="width:110px;" name="city" onchange="">
+        <option value="mumbai">Mumbai</option></select>
+@*select(field = search(""), options = Seq("mumbai"->"Mumbai"))*@</div>
+		<table><tr><td>&nbsp&nbsp</td></tr><tr><td>&nbsp&nbsp</td></tr><tr>
+
+<div id="where" align="left">
+<td style="width:250px;">
+<!--input type="text" id="district" name="district" style="height:32px;width:250px;" placeholder="Where?" value='@search.data.get("district")'></input-->
+<!--td><button type="button" onclick="lookupGeoData();">Tune Location</button></td-->
+<!--input type="hidden" id="lat" name="lat" value="@search.data.get("lat")"/ -->
+	<form onsubmit="getCords()">
+  @helper.inputText(field=search("district"), args='size->3000,'id -> "district1", '_label -> "", 'placeholder -> "Where?")</td>
+  	<td style="width:250px;"><!--input type="text" id="speciality" name="speciality" style="height:32px;width:250px;" placeholder="What?" value='@search.data.get("speciality")'></input-->
+		@helper.inputText(field=search("speciality"), args='id -> "what", '_label -> "", 'size->10, 'placeholder -> "What?")</td>
+		<td>
+		<button type="submit" value="Search" style="width:80px;height:25px;">Search</button>
+		</td>
+</form><td>
+<form action="@routes.Order.search()" method="post" id='hid_form'>
+  <input type="hidden" id="district" name="district" value=""/>
+  <input type="hidden" id="longitude" name="longitude" value=""/>
+  <input type="hidden" id="latitude" name="latitude" value=""/>
+  <input type="hidden" id="speciality" name="speciality" value=""/>
+</form></td>
+	
+		</div>
 		</tr></table>
 		</fieldset>	
-		}
     <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
 	<link href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.1/themes/ui-darkness/jquery-ui.min.css" rel="stylesheet">
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 	<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.1/jquery-ui.min.js"></script>
 	<!--div id='map-canvas'></div-->
+	<script src="http://api.mygeoposition.com/api/geopicker/api.js" type="text/javascript"></script>
 <script type="text/javascript">
+var geocoder;
+var urlLoc;
+function initialize() {
+geocoder = new google.maps.Geocoder();
+}
+
+
+function getCords() {
+	var address=document.getElementById("district1").value;
+	alert(address);
+	geocoder.geocode({'address': address}, function(results, status) {
+  if (status == google.maps.GeocoderStatus.OK) {
+  
+    var lat = results[0].geometry.location.lat();
+	var lon = results[0].geometry.location.lng();
+	$("#latitude").val(lat);
+    $("#longitude").val(lon);
+	$("#district").val(address);
+
+    /*urlLoc = "/products/list/myloc_def/" + lat + "/";
+	var urlLoc1=urlLoc + lon;
+	alert(urlLoc1);
+	window.location.href=urlLoc1;*/
+	$("#hid_form").submit();
+  } else {
+    alert("Geocode was not successful for the following reason: " + status);
+	}
+  });
+}
+
+$(document).ready(function() {
+geocoder = new google.maps.Geocoder();
+});
+
+google.maps.event.addDomListener(window, 'load', initialize);
+
+</script>
+<script type="text/javascript">
+
   function showmaploc(lati,longi) {
   var mapcanvas = document.createElement('div');
   mapcanvas.id = 'mapcontainer';
-  mapcanvas.style.height = '500px';
-  mapcanvas.style.width = '500px';
+  mapcanvas.style.height = '600px';
+  mapcanvas.style.width = '600px';
   document.querySelector('article').appendChild(mapcanvas);
   var coords = new google.maps.LatLng(lati,longi); 
+  //geocoder = new google.maps.Geocoder();
   var options = {
     zoom: 17,
     center: coords,
@@ -65,8 +125,8 @@
 				},
 			modal:true,
             autoOpen:false,
-            width: 555,
-            height: 400,
+            width: 600,
+            height: 550,
             resizeStop: function(event, ui) {google.maps.event.trigger(map, 'resize')},
             open: function(event, ui) {google.maps.event.trigger(map, 'resize');},
             //buttons:{ "Close": function() { $(this).dialog("close"); } },
@@ -84,202 +144,224 @@ navigator.geolocation.getCurrentPosition(callback);
 function callback(position) {
    var latitude = position.coords.latitude;
    var longitude = position.coords.longitude;
-   var url = "http://localhost:9000/products/list/myloc/";
-   var url1 = url + latitude + "/" + longitude;
-   window.location.href=url1;
-   }
+   jsRoutes.controllers.Order.geo(latitude,longitude).ajax({
+						type : 'GET',
+						success : function(msg) {
+						$('#tabscontent').replaceWith(msg);
+					    },
+					    error : function(data) {
+						alert(data);
+                        }
+});						
+}
 
+function placeDrop(location) {
+if(location.localeCompare("mylocation")==0){
+showlocation();
+}
+else {
+jsRoutes.controllers.Order.filter_location(location).ajax({
+						type : 'GET',
+						success : function(msg) {
+						$('#tabscontent').replaceWith(msg);
+					    },
+					    error : function(data) {
+						alert(data);
+                        }
+});
+}
+}
+
+function itemDrop(item){
+jsRoutes.controllers.Order.filter_item(item).ajax({
+						type : 'GET',
+						success : function(msg) {
+						$('#tabscontent').replaceWith(msg);
+					    },
+					    error : function(data) {
+						alert(data);
+                        }
+});
+}
 </script>
 </div>
    <div id="map_container" title="Location Map">    
         <div id="map_canvas"></div>
     </div>
-<div id="filter" style="width:250px;height:700px;background-color:#FFA500;float:left;overflow-y:scroll">
+<div id="filter" style="width:250px;height:700px;background-color:#FFA500;float:left;">
 <table align="center"><tr><td>
-@form(routes.Order.filter_res()){
-<div class="control-group">
-<div class="controls" style="height:200px;float:right;overflow-y:scroll">
-<!--li><input name="cuis[0].id" value="north indian" type="checkbox"
-@for(i <- 0 to 2) {
-@if(vendorForm("cuis[" + i + "].id").value=="north indian") { checked }}>
-North indian</li>
-<li><input name="cuis[1].id" value="south indian" type="checkbox"
-@for(i <- 0 to 2) {
-@if(vendorForm("cuis[" + i + "].id").value=="south indian") { checked }
-}>South Indian</li>
-<li><input name="cuis[2].id" value="italian" type="checkbox"
-@for(i <- 0 to 2) {
-@if(vendorForm("cuis[" + i + "].id").value=="italian") { checked }
-}>Italian</li-->
-<li><p>Cuisine</p></li>
-@for((t, index) <- message.zipWithIndex) {
-       <input type="checkbox" name="cuisines[@index]" value="@t">@t <br>
-			  }
+@form(routes.Order.list_sel()){
+<div class="control-group" style="margin:20px;">
+<div style="float:bottom"><label style="width:200px;font-weight:bold;font-family:arial;font-size:16px;" valign="bottom">Category</label></div>
+<hr style="width:200px;color:black;" valign="top";></hr>
+<div class="controls" style="width:200px;float:center;">
+<p style="font-size:14px";>
+   <input type="radio" id="category0" name="category" value="street food" onclick="radCat(this.value)">  Off the Streets<br>
+   <input type="radio" id="category1" name="category" value="restaurant food" onclick="radCat(this.value)">  Restaurants<br>
+  </p>
+</div></div>
+<div class="control-group" style="margin:20px;">
+<label style="width:200px;font-weight:bold;font-family:arial;font-size:16px;" valign="bottom">Cuisines</label>
+<hr style="width:200px;color:black;" valign="top"></hr>
+<div class="controls" style="width:200px;height:110px;float:center;overflow-y:scroll;">
+<p style="font-size:14px;">
+<ul id="listCuis" style="list-style-type: none;font-size:14px;">
+@for((t, index) <- cuisines.zipWithIndex) {
+       <li id="@t">
+       <input type="checkbox" name="cuisinesCheck" value="@t"  onclick="checkCuisine()">  @t(0).toUpper@t.substring(1).toLowerCase<br>
+	   </li>
+	   }
+</ul>
+</p>
+<script type="text/javascript">
+function checkCuisine() {
+var cui_arr=new Array();
+var i;
+var j=0;
+var txt="";
+var cuisinesCheck = document.forms[2].cuisinesCheck;
+for(i=0; i < cuisinesCheck.length; i++) {
+if(cuisinesCheck[i].checked){
+cui_arr[j] = cuisinesCheck[i].value;
+j++;
+}
+}
+if(cui_arr.length==0){
+txt="%";
+}
+else {
+for(var k=0;k<cui_arr.length;k++) {
+if(k==cui_arr.length-1)
+txt += cui_arr[k]
+else
+txt += cui_arr[k]+",";
+}
+}
+jsRoutes.controllers.Order.filter_cuisine(txt).ajax({
+						type : 'GET',
+						success : function(msg) {
+						$('#tabscontent').replaceWith(msg);
+					    },
+					    error : function(data) {
+						alert(data);
+                        }
+});						
+}
+
+var list = $("ul"),
+origOrder = list.children();
+list.on("click", ":checkbox", function() {
+    var i, checked = document.createDocumentFragment(),
+        unchecked = document.createDocumentFragment();
+    for (i = 0; i < origOrder.length; i++) {
+        if (origOrder[i].getElementsByTagName("input")[0].checked) {
+            checked.appendChild(origOrder[i]);
+        } else {
+            unchecked.appendChild(origOrder[i]);
+        }
+    }
+    list.append(checked).append(unchecked);
+});
+
+
+$(function() {
+     $( "#slider-range" ).slider({
+      range: true,
+      min: 0,
+      max: 5000,
+	  step:50,
+      values: [ 200, 3000 ],
+	  stop: function( _, ui) {
+	  costRange($( "#slider-range" ).slider( "values", 0 ),$( "#slider-range" ).slider( "values", 1 ));
+	  },
+      slide: function( event, ui ) {
+       $( "#amount" ).val( "Rs." + ui.values[ 0 ] + " - Rs." + ui.values[ 1 ] );
+	  }
+    });
+    $( "#amount" ).val( "Rs." + $( "#slider-range" ).slider( "values", 0 ) +
+     " - Rs." + $( "#slider-range" ).slider( "values", 1 ) );
+  });
+  
+function costRange(cost1, cost2){
+//var url1 = "/products/list/cost/" + cost1 + "/" + cost2;
+				jsRoutes.controllers.Order.filter_cost(cost1,cost2).ajax({
+						type : 'GET',
+						success : function(msg) {
+						$('#tabscontent').replaceWith(msg);
+					    },
+					    error : function(data) {
+						alert(data);
+                        }
+});
+}
+
+
+var radId=2;
+function radCat(category){
+if(radId == 0 && category.localeCompare("street food")==0) {
+document.getElementById("category0").checked=false;
+radId=2;
+category="%";
+}
+else if(radId == 1 && category.localeCompare("restaurant food")==0){
+document.getElementById("category1").checked=false;
+radId=2;
+category="%";
+}
+else {
+if(category.localeCompare("restaurant food")==0) radId=1;
+else radId=0;
+}
+jsRoutes.controllers.Order.filter_category(category).ajax({
+						type : 'GET',
+						success : function(msg) {
+						$('#tabscontent').replaceWith(msg);
+					    },
+					    error : function(data) {
+						alert(data);
+                        }
+});
+}
+</script>
 </div>
 </div>
+<div class="control-group" style="margin:20px;">
+<div style="float:bottom"><label style="width:200px;font-weight:bold;font-family:arial;font-size:16px;" valign="bottom">Cost for 2</label></div>
+<hr style="width:200px;color:black;" valign="top";></hr>
+<div class="controls" style="width:200px;float:center;">
+<p>
+   <input type="text" id="amount" style="border:0; width:200px;color:black; font-weight:bold;" disabled>
+  </p>
+<div id="slider-range" style="margin:10px;"></div>
+</div></div>
+<div class="control-group" style="margin:20px;">
+<!--label style="width:180px;font-weight:bold;font-family:arial;font-size:16px;" valign="bottom">Mode of Order</label-->
+<hr style="width:200px;color:black;" valign="top";></hr>
+<div class="controls" style="width:200px;float:center;">
+<select id="modeDrop" name="modeDrop" style="width:200px;float:center;" onchange="modeSel(this.value)">
+<!--option id="remove_mode" value="%" style="visibility:hidden;">Remove Filter</option-->
+<option id="no_mode" value="%">Mode of Order</option>
+<option id="home_delivery" value="home delivery">Home Delivery</option>
+<option id="pickup" value="pickup">Pickup</option>
+</select>
+</div></div>
+<div class="control-group" style="margin:20px;">
+<!--label style="width:180px;font-weight:bold;font-family:arial;font-size:16px;" valign="bottom">Mode of Order</label-->
+<hr style="width:200px;color:black;" valign="top";></hr>
+<div class="controls" style="width:200px;float:center;">
+<select id="serveDrop" name="serveDrop" style="width:200px;float:center;" onchange="serveSel(this.value)">
+<option value="%">Servings</option>
+<option value="serves jain">Jain</option>
+<option value="pure jain">Pure Jain</option>
+<option value="veg">Pure Veg</option>
+<option value="non-veg">Non-Veg</option>
+</select>
+</div></div>
 </td></tr>
-<tr><td>&nbsp&nbsp</td></tr>
-<tr><td>
-   <input type="submit" class="btn btn-primary" value="Filter">
-   </td></tr>
 }
 </table>
 </div>
-<!--h1 style="margin-bottom:0;"></h1>
-<div class="search-filter-tab">
-            <div align="center" style="width:240px" id="filter-cuisines-html-area">
-                <div class="search-filter-label cuisine-label">
-				<div class="clear"></div>
-                                            <div align="left" title="Filter results by cuisine"></div>
-                                        <div class="clear"></div>
-                    <div class="p-relative filter-input-area box-sizing-content">
-                                                    <input type="text" id="filter-cuisines" class="search-input-field" placeholder="Cuisine" 
-													autocorrect="on" align="center" style="width:180px;height:32px;background: #FFF url(http://html-generator.weebly.com/files/theme/input-text-9.png) no-repeat 150px 6px;"
-													onfocus="toggle_ul()"/>
-                            <div class="search-filter-icon" data-iconr="&#8226;" ></div>
-                                                                                                <div class="clear"></div>
-                    </div>
-                </div>
-                <div id="filter-cuisines-html">
-                                            <div class="search-filter-dd">
-                            <div class="clear"></div>
-                                                            <div id="cuisines-header" class="search-filter-sub-head">
-															<div id="cuisine_list" style="height:200px;display:none;overflow-y: scroll;">                                
-                                <ul id="cuisine_ul" align="left" style="list-style-type:none;padding-left:5px" class="facet-list-dialog livefiltersearch"><li style="style-type:none;" class=""><a href="@controllers.routes.Order.filter_cuisine("%")" title="Remove cuisine based filters" >Remove Filter <span class="num"></span></a></li><li style="style-type:none;" class=""><a href="@controllers.routes.Order.filter_cuisine("north indian")" title="North Indian Restaurants in Mumbai" >North Indian <span class="num"></span></a></li><li class=""><a href="@controllers.routes.Order.filter_cuisine("south indian")" title="South Indian Restaurants in Mumbai" >South Indian <span class="num"></span></a></li>
-								<li class=""><a href="@controllers.routes.Order.filter_cuisine("italian")" title="Italian Restaurants in Mumbai" >Italian <span class="num"></span></a></li>
-								<li class=""><a href="@controllers.routes.Order.filter_cuisine("chinese")" title="Chinese Restaurants in Mumbai" >Chinese <span class="num"></span></a></li>
-								<li class=""><a href="@controllers.routes.Order.filter_cuisine("snacks")" title="Fast Food Restaurants in Mumbai" >Fast Food <span class="num"></span></a></li>
-								<li class=""><a href="@controllers.routes.Order.filter_cuisine("mumbai special")" title="mumbai special Restaurants in Mumbai" >Mumbai special <span class="num"></span></a></li>
-								<li class=""><a href="@controllers.routes.Order.filter_cuisine("gujarati")" title="Gujarat special Restaurants in Mumbai" >Gujarat special <span class="num"></span></a></li></ul>
-                                                                              </div> </div> </div>
-                                        <div class="clear"></div>
-                </div>
-                <div class="clear"></div>
-            </div>
-			
-			<div align="center" style="width:240px" id="filter-cost">
-                <div class="search-filter-label cost-label">
-				<div class="clear"></div>
-                                            <div align="left" title="Filter results by cost"></div>
-                                        <div class="clear"></div>
-                    <div class="p-relative filter-input-area box-sizing-content">
-                                                    <input type="text" id="filter-cost" class="search-input-field" placeholder="Cost for 2" 
-													autocorrect="on" align="center" style="width:180px;height:32px;background: #FFF url(http://html-generator.weebly.com/files/theme/input-text-9.png) no-repeat 150px 6px;"
-													onfocus="toggle_ul_cost()" />
-                            <div class="search-filter-icon" data-iconr="&#8226;" ></div>
-                                                                                                <div class="clear"></div>
-                    </div>
-                </div>
-                <div id="filter-cost-html">
-                                            <div class="search-filter-dd">
-                            <div class="clear"></div>
-                                                            <div id="cost-header" class="search-filter-sub-head">
-															<div id="cost_list" style="height:200px;display:none;overflow-y: scroll;">                                
-                                <ul align="left" id="cost_ul" style="list-style-type:none;padding-left:5px" class="facet-list-dialog livefiltersearch"><li style="style-type:none;" class=""><a href="@controllers.routes.Order.filter_cost(0,10000)" title="Remove cost based filters" >Remove Filter <span class="num"></span></a></li><li align="left" style="style-type:none;" class=""><a href="@controllers.routes.Order.filter_cost(0,100)" title="Restaurants with cost for 2 below 100" >Below 100<span class="num"></span></a></li><li class=""><a href="@controllers.routes.Order.filter_cost(100,300)" title="Restaurants with cost for 2 Between 100 and 300" >Between 100 and 300<span class="num"></span></a></li>
-								<li class=""><a href="@controllers.routes.Order.filter_cost(300,800)" title="Restaurants with cost for 2 Between 100 and 300" >Between 300 and 800 <span class="num"></span></a></li>
-								<li class=""><a href="@controllers.routes.Order.filter_cost(800,1500)" title="Restaurants with cost for 2 Between 100 and 300" >Between 800 and 1500 <span class="num"></span></a></li>
-								<li class=""><a href="@controllers.routes.Order.filter_cost(1500,2500)" title="Restaurants with cost for 2 Between 100 and 300" >Between 1500 and 2500 <span class="num"></span></a></li>
-								<li class=""><a href="@controllers.routes.Order.filter_cost(2500,10000)" title="Restaurants with cost for 2 Above 2500" >Above 2500 <span class="num"></span></a></li>
-								</ul>
-                                                                              </div> </div> </div>
-                                        <div class="clear"></div>
-                </div>
-                <div class="clear"></div>
-            </div>
-			
-			<div align="center" style="width:240px" id="filter-cost">
-                <div class="search-filter-label cost-label">
-                                            <div align="left" title="Filter results by servings"></div>
-                                        <div class="clear"></div>
-                    <div class="p-relative filter-input-area box-sizing-content">
-                                                    <input type="text" id="filter-cost" class="search-input-field" placeholder="Serving type" 
-													autocorrect="on" align="center" style="width:180px;height:32px;background: #FFF url(http://html-generator.weebly.com/files/theme/input-text-9.png) no-repeat 150px 6px;"
-													onfocus="toggle_ul_serves()" />
-                            <div class="search-filter-icon" data-iconr="&#8226;" ></div>
-                                                                                                <div class="clear"></div>
-                    </div>
-                </div>
-                <div id="filter-serves-html">
-                                            <div class="search-filter-dd">
-                            <div class="clear"></div>
-                                                            <div id="serves-header" class="search-filter-sub-head">
-															<div id="serves_list" style="height:200px;display:none;overflow-y: scroll;">                                
-                                <ul align="left" id="serves_ul" style="list-style-type:none;padding-left:5px" class="facet-list-dialog livefiltersearch"><li style="style-type:none;" class=""><a href="@controllers.routes.Order.filter_serves("%")" title="Remove Servings based filters" >Remove Filter <span class="num"></span></a></li><li align="left" style="style-type:none;" class=""><a href="@controllers.routes.Order.filter_serves("pure veg")" title="Pure Veg Restaurants">Pure-Veg<span class="num"></span></a></li><li class=""><a href="@controllers.routes.Order.filter_serves("serves non-veg")" title="Restaurants that serve non-veg" >Serves Non-Veg<span class="num"></span></a></li><li align="left" style="style-type:none;" class=""><a href="@controllers.routes.Order.filter_serves("serves jain")" title="Restaurants that serve Jain Food">Serves Jain<span class="num"></span></a></li><li class=""><a href="@controllers.routes.Order.filter_serves("pure jain")" title="Pure Jain Restaurants" >Pure Jain<span class="num"></span></a></li>
-								</ul>
-                                                                              </div> </div> </div>
-                                        <div class="clear"></div>
-                </div>
-                <div class="clear"></div>
-            </div>
-			
-			<div align="center" style="width:240px" id="filter-cost">
-                <div class="search-filter-label cost-label">
-                                            <div align="left" title="Filter results by cost"></div>
-                                        <div class="clear"></div>
-                    <div class="p-relative filter-input-area box-sizing-content">
-                                                    <input type="text" id="filter-cost" class="search-input-field" placeholder="Delivery Mode" 
-													autocorrect="on" align="center" style="width:180px;height:32px;background: #FFF url(http://html-generator.weebly.com/files/theme/input-text-9.png) no-repeat 150px 6px;"
-													onfocus="toggle_ul_mode()" />
-                            <div class="search-filter-icon" data-iconr="&#8226;" ></div>
-                                                                                                <div class="clear"></div>
-                    </div>
-                </div>
-                <div id="filter-mode-html">
-                                            <div class="search-filter-dd">
-                            <div class="clear"></div>
-                                                            <div id="mode-header" class="search-filter-sub-head">
-															<div id="mode_list" style="height:200px;display:none;overflow-y: scroll;">                                
-                                <ul align="left" id="mode_ul" style="list-style-type:none;padding-left:5px" class="facet-list-dialog livefiltersearch"><li style="style-type:none;" class=""><a href="@controllers.routes.Order.filter_mode("%")" title="Remove mode based filters" >Remove Filter <span class="num"></span></a></li><li align="left" style="style-type:none;" class=""><a href="@controllers.routes.Order.filter_mode("home delivery")" title="Restaurants that provide home delivery">Home Delivery<span class="num"></span></a></li><li class=""><a href="@controllers.routes.Order.filter_mode("pickup")" title="Restaurants where pickup is available" >Pickup<span class="num"></span></a></li>
-								</ul>
-                                                                              </div> </div> </div>
-                                        <div class="clear"></div>
-                </div>
-                <div class="clear"></div>
-            </div>
-			
-        </div>
-		
-		<script type="text/javascript">
-		function toggle_ul() {
-		var disp=document.getElementById("cuisine_list");
-		if (disp.style.display=='none')
-		disp.style.display='block';
-		else
-		disp.style.display='none';
-		}
-		
-		function toggle_ul_cost() {
-		var disp=document.getElementById("cost_list");
-		if (disp.style.display=='none')
-		disp.style.display='block';
-		else
-		disp.style.display='none';
-		}
-		
-		function toggle_ul_serves() {
-		var disp=document.getElementById("serves_list");
-		if (disp.style.display=='none')
-		disp.style.display='block';
-		else
-		disp.style.display='none';
-		}
-		
-		function toggle_ul_mode() {
-		var disp=document.getElementById("mode_list");
-		if (disp.style.display=='none')
-		disp.style.display='block';
-		else
-		disp.style.display='none';
-		}
-		
-		function toggle_sort() {
-		var disp=document.getElementById("sort_list");
-		if (disp.style.display=='none')
-		disp.style.display='block';
-		else
-		disp.style.display='none';
-		}
-		
+		<script type="text/javascript">	
  //This way We Can get data from the li tag between ul
   /*$("#cuisine_ul li").click(function() {
      alert(this.id); // id of clicked li by directly accessing DOMElement property
@@ -288,162 +370,153 @@ North indian</li>
      alert($(this).text()); // gets text contents of clicked li
  });*/
 </script>
-<!--------------------------------------------------------------------------------------------------------->
-<!--table align="center" border="0" cellpadding="0px" cellspacing="0px">
-<tr><td valign="bottom"> Cuisine </td></tr>
-<tr><td>
-<div id="cuisine" align="center">
-<select id="cuisine" onchange="change()">
-<option value=""></option>
-<option value="Mumbai special">Mumbai special</option>
-<option value="North Indian"> North Indian</option>
-<option value="South Indian">South Indian</option>
-<option value="Chinese">Chinese</option>
-<option value="Italian">Italian</option>
-<option value="Lebanese">Lebanese</option>
-</select>
-</div>
-</td></tr>
-<tr><td></tr></td>
-<tr><td valign="bottom" align="left"> Cost for 2 </td></tr>
-<tr><td>
-<div id="cost" align="center">
-<select id="cost">
-<option value=""></option>
-<option value="below 200">Below 200</option>
-<option value="between 200-500">Between 200 and 500</option>
-<option value="between 500 and 1000">between 500 and 1000</option>
-<option value="between 1000 and 2000">Between 1000 and 2000</option>
-<option value="Above 2000">Above 2000</option>
-</select>
-</div>
-</td></tr>
-
-<tr><td valign="bottom" align="left"> Serves </td></tr>
-@*select(field = search("Type"), options = Seq(""->"", "jain"->"Pure Jain","jain_available"->"Serves Jain","veg"->"Pure Veg", "non-veg"->"Serves Non-Veg"))*@
-<tr><td>
-<div id="type" align="center">
-<select id="serves">
-<option value=""></option>
-<option value="Veg">Pure Veg</a></option>
-<option value="Non-Veg">Serves Non-Veg</option>
-<option value="Serves_Jain">Serves Jain</option>
-<option value="Jain">Pure Jain</option>
-</select>
-</div>
-</td></tr>
-<tr><td valign="bottom" align="left"> Mode of Order </td></tr>
-<tr><td>
-<div id="mode" align="center">
-<select id="mode">
-<option value=""></option>
-<option value="Pickup">Pickup</a></option>
-<option value="home-delivery">Home Delivery</option>
-</select>
-</div>
-</td></tr>
-</table-->
-</div-->
 <div id="show_map_loc" class="dialog"></div>
-<div id="content" style="width:750px;height:700px;background-color:#EEEEEE;overflow-y: scroll;">
-<div id="wrapper" style="width:700px;height:80%;" valign="top">
+<div id="content" style="width:800px;background-color:#EEEEEE;overflow-y: scroll;">
+<div id="wrapper" style="width:700px;" valign="top">
 <script type="text/javascript" charset="utf-8">
 function sorts(sortOption) {
-var url = "http://localhost:9000/products/list/sort/";
-var urlToSort=url + sortOption;
-window.location.href=urlToSort;
-}
-function func() {
-document.getElementById("sort_drop").value=sortOption;
-}
-
-window.onload=func();
-
-/*$.ajax({
-url: urlToSort,
-success: function(results) {
-location.load(url);
-}
-});*/
-
-function sort(urlToSort) {
-$.ajax({
-url: urlToSort,
-type: 'Sort',
-success: function(results) {
-location.reload();
-}
+//var url = "/products/list/sort/";
+//var urlToSort=url + sortOption;
+jsRoutes.controllers.Order.sort(sortOption).ajax({
+                        type : 'GET',
+						success : function(msg) {
+						$('#tabscontent').replaceWith(msg);
+					    },
+					    error : function(data) {
+						alert(data);
+                        }
 });
 }
 
-/*function showmaploc1(latitude,longitude) {
-	var url1="/products/showMap?latitude=" + latitude + "&longitude=" + longitude;
-	alert(url1);
-				$.ajax({
-						type : 'POST',
-						url : url1,	
-					    success : function(msg) {	
-						//$("#show_map_loc").empty();
-						//$("#show_map_loc").append(msg).dialog("open");
-						$( ".dialog" ).dialog({ appendTo: "#show_map_loc" }).dialog("open");
-						//initSub();
-						//window.alert(msg);
+function modeSel(mode) {
+jsRoutes.controllers.Order.filter_mode(mode).ajax({
+                        type : 'GET',
+						success : function(msg) {
+						$('#tabscontent').replaceWith(msg);
 					    },
 					    error : function(data) {
-                           window.alert(data);
-                           }
-		                });
-					return false;
-		}*/
+						alert(data);
+                        }
+});
+}
 
+function serveSel(serves) {
+jsRoutes.controllers.Order.filter_serves(serves).ajax({
+                        type : 'GET',
+						success : function(msg) {
+						$('#tabscontent').replaceWith(msg);
+					    },
+					    error : function(data) {
+						alert(data);
+                        }
+});
+}
 </script>
-<div id="tabContainer" valign="top" align="left">
-<div id="sort" align="right" valign="bottom">
-<select id="sort_drop" name="sort_drop" onchange="sorts(this.value)">
+<div id="tabContainer" name="tabContainer" valign="top" align="left">
+<div id="sort" align="right" valign="top">
+<select id="sort_drop" style="width:160px;" name="sort_drop" onchange="sorts(this.value)">
 <option value="distance">Distance</option>
 <option value="rating">Rating</option>
 <option value="cost_desc">Cost High to Low</option>
 <option value="cost_asc">Cost Low to High</option>
 </select>
 </div>
-  <!--div id="tabContainer" valign="top" align="left"-->
-   
-    <div class="tabscontent">
-    <div class="tabpage" id="tabpage_1">	
-<table border="0" cellpadding="5px" cellspacing="5px">
+
+<div id="tabscontent" class="tabscontent">
+<div class="tabpage" id="tabpage_1">	
+<table border="0" style="padding:50px;spacing:50px">
 <dl>
-@for(vendors <- vendor){
+@{if((vendor.size() % 5) == 0) last=(vendor.size()/5) else last=((vendor.size()/5)+1)}
+@{if(index < last) till=(((index - 1)*5)+4) else till=(vendor.size() - 1)}
+@for(i <- ((index - 1)*5) to till){
+@*for(vendors <- vendor){*@
+<tr><td style="width:100px;height:100px">
+<div class="vend_img" style="float:left">
+<a href=""><img name="showMap" id="showMap" class="editIcon" title="See more photos" style="width:100px;height:100px" src='@routes.Assets.at("images/26.jpg")'></a>
+</div></td>
+<td style="width:20px;height:100px"></td>
+<td>
+<table>
 <tr>
 <td align="right">
 <dt style="float:left">
-<!--a href="file:///C:/Users/akshay/Desktop/geo1.html" onClick="return showmaploc(@vendors.latitude,@vendors.longitude)" style="color:black;"-->
-<p style="color:black;">@vendors.vname.toUpperCase</p>
+<!--p style="color:black;"--><a style="color:black;font-size:16px" href="" title="Look more about @vendor(i).vname.toUpperCase">@vendor(i).vname.toUpperCase</a><!--/p-->
 </dt>
 </td></tr>
 <tr>
-<td align="left">
-<dd>@vendors.cuisine</dd> 
-<dd>@vendors.district</dd>
-<dd>@vendors.city  <!--a href="javascript:void(null)"--><img name="showMap" id="showMap" class="editIcon" style="height:26px;width:26px;" title="Map Location" src='@routes.Assets.at("images/map_marker.png")' onclick="showmaploc(@vendors.latitude,@vendors.longitude)"></a></dd>
+<td align="left" style="width:300px;height:100px">
+<dd>@vendor(i).cuisine</dd> 
+<dd>@vendor(i).district</dd>
+<dd>@vendor(i).city  &nbsp&nbsp&nbsp&nbsp<!--a href=""--><img name="showMap" id="showMap" class="editIcon" style="height:26px;width:26px;" title="Map Location" src='@routes.Assets.at("images/map_marker.png")' onclick="showmaploc(@vendor(i).latitude,@vendor(i).longitude)"></img></dd>
 </td>
-<td>&nbsp</td><td>&nbsp</td>
-<td align="right">
-<dd>Rating: @vendors.rating</dd>
-<dd>Cost for 2: @vendors.cost</dd>
+<!--td>&nbsp</td><td>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</td-->
+<td align="left">
+<dd>Rating: @vendor(i).rating</dd>
+<dd>Cost for 2: @vendor(i).cost</dd>
+</td></tr></table>
 </td></tr>
+<tr><td style="height:20px"></td></tr>
 }
 </dl>
 </table>
-</fieldset>
-</tbody>
-</table>
 </div>
-    </div>
-  </div>
+<script>
+function changePage(page) {
+jsRoutes.controllers.Order.page(page).ajax({
+                        type : 'GET',
+						success : function(msg) {
+						$('#tabscontent').replaceWith(msg);
+						$('body').scrollTop(0);
+					    },
+					    error : function(data) {
+						alert(data);
+                        }
+});
+}
+</script>
+<div style="margin-left:50px;margin-right:50px;margin-bottom:5px;margin-top:5px;"><hr style="border:1px solid black;"></hr></div>
+<div id="pagination" class="pagination" style="float:center;width:580px;margin-left:50px;margin-bottom:0px;margin-top:5px;">
+<table>
+<tr>
+<ul style="list-style-type: none;">
+<td style="width:50px" align="left">
+@if(index > 1) {
+<li class="prev">
+<a href="javascript:void(0)" onclick="changePage(@index-1)"><font color="black"> Prev &larr;</font></a>
+</li>
+} else {
+<li class="prev disabled">
+<a><font color="black">&larr;<font></a>
+</li>
+}
+</td>
+<td style="width:700px">
+<li class="current">
+<a><font color="black">Sellers @((index-1)*5 + 1) - @((index-1)*5 + 5) of @vendor.size()</font></a>
+</li>
+</td>
+<td style="width:50px" align="right">
+@if(index < last){
+<li class="next">
+<!--a href="@routes.Order.page(index+1)"--><a href="javascript:void(0)" style="text-color:white;" onclick="changePage(@index+1)"><font color="black"> Next &rarr;</font></a>
+</li>
+} else {
+<li class="next disabled">
+<a><font color="black">&rarr;</font></a>
+</li>
+}
+</td>
+</tr>
+</table>
+</ul>
+</div>
 </div>
 </div>
 <div id="map" style="background-color:#FFA500;float:left">
 <article>
 </article>
 </div>
+</div>
+</div>
 }
+</div>

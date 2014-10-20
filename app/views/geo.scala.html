@@ -1,5 +1,6 @@
 <section id="wrapper">
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
+<script type="text/javascript" src="@routes.Order.javascriptRoutes"></script>
     <article>
 
     </article>
@@ -7,7 +8,8 @@
 function success(position) {
   var latitude = position.coords.latitude;
    var longitude = position.coords.longitude;
-   var url = "http://localhost:9000/products/list/myloc/";
+   //jsRoutes.controllers.Order.geo_def(latitude,longitude);
+   var url = "http://localhost:9000/products/list/myloc_def/";
    var url1 = url + latitude + "/" + longitude;
    window.location.href=url1;
 }

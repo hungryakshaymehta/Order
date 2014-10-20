@@ -16,12 +16,17 @@ import play.db.jpa.*;
 
 public class Search extends Vendor {
 
+public static String address;
+
 public Search() {}
 
-public Search(String city, String speciality) {
+public Search(String city, String speciality, String address, Float lat, Float lon) {
 super.city=city;
 super.speciality=speciality;
 super.picture=picture;
+this.address=address;
+super.latitude=lat;
+super.longitude=lon;
 }
 public static List<Vendor> filter_search(String city, String speciality) {
 //return find.where().icontains("city",city).icontains("speciality",speciality).orderBy("Name asc").findList();

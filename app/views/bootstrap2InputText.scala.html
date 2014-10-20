@@ -1,0 +1,28 @@
+@(field: String, args: (Symbol,String)*)
++@**
++ * Generate an HTML input text or textarea in TB 2.x format.
++ *
++ * Example:
++ * {{{
++ * @bootstrap2InputText("name", 'type -> "text", 'placeholder -> "Your name")
++ * }}}
++ *
++ * @param field The field name, as a string.
++ * @param args Optional: zero or more of: 'type, 'id, 'name, 'value, 'class, 'help, 'placeholder
++ *@
++
+@inputType = @{ args.toMap.get('type).getOrElse("text") }
+@inputId = @{ args.toMap.get('id).getOrElse(field) }
+@inputName = @{ args.toMap.get('name).getOrElse(field) }
+@inputValue = @{ args.toMap.get('value).getOrElse("") }
+@inputClass = @{ args.toMap.get('class).getOrElse("") }
+@inputHelp = @{ args.toMap.get('help).getOrElse("") }
+@inputPlaceholder = @{ args.toMap.get('placeholder).getOrElse("") }
+
+ <div class="control-group">
+   <label class="control-label" for="@field">@field</label>
+   <div class="controls">
+     <input class="@inputClass" type="@inputType" id="@inputId" name="@inputName" value="@inputValue" placeholder="@inputPlaceholder">
+     <p class="help-block">@inputHelp</p>
+   </div>
+ </div>

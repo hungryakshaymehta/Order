@@ -1,0 +1,81 @@
+@(vendor:List[Vendor],search:Form[Search],cuisines:List[String],vendorForm:Form[Vendor],index:Int,cuisineForm:Form[Cuisine])
+import helper._
+import helper.twitterBootstrap._
+@import java.math.BigInteger; var till=0; var last=0;
+
+<div id="tabscontent" class="tabscontent">
+<div class="tabpage" id="tabpage_1">	
+<table border="0" cellpadding="5px" cellspacing="5px">
+<dl>
+@{if((vendor.size() % 5) == 0) last=(vendor.size()/5) else last=((vendor.size()/5)+1)}
+@{if(index < last) till=(((index - 1)*5)+4) else till=(vendor.size() - 1)}
+@for(i <- ((index - 1)*5) to till) {
+@*for(vendors <- vendor){*@
+<tr><td style="width:100px;height:100px">
+<div class="vend_img" style="float:left">
+<a href=""><img name="showMap" id="showMap" class="editIcon" title="See more photos" style="width:100px;height:100px" src='@routes.Assets.at("images/26.jpg")'></a>
+</div></td>
+<td style="width:20px;height:100px"></td>
+<td>
+<table>
+<tr>
+<td align="right">
+<dt style="float:left">
+<!--p style="color:black;"--><a style="color:black;font-size:16px" href="" title="Look more about @vendor(i).vname.toUpperCase">@vendor(i).vname.toUpperCase</a><!--/p-->
+</dt>
+</td></tr>
+<tr>
+<td align="left" style="width:300px;height:100px">
+<dd>@vendor(i).cuisine</dd> 
+<dd>@vendor(i).district</dd>
+<dd>@vendor(i).city  &nbsp&nbsp&nbsp&nbsp<!--a href=""--><img name="showMap" id="showMap" class="editIcon" style="height:26px;width:26px;" title="Map Location" src='@routes.Assets.at("images/map_marker.png")' onclick="showmaploc(@vendor(i).latitude,@vendor(i).longitude)"></img></dd>
+</td>
+<!--td>&nbsp</td><td>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</td-->
+<td align="left">
+<dd>Rating: @vendor(i).rating</dd>
+<dd>Cost for 2: @vendor(i).cost</dd>
+</td></tr></table>
+</td></tr>
+<tr><td style="height:20px"></td></tr>
+}
+</dl>
+</table>
+</div>
+<div style="margin-left:50px;margin-right:50px;margin-bottom:5px;margin-top:5px;"><hr style="border:1px solid black;"></hr></div>
+<div id="pagination" class="pagination" style="float:center;width:580px;margin-left:50px;margin-bottom:0px;margin-top:5px;">
+<table>
+<tr>
+<ul style="list-style-type: none;">
+<td style="width:50px" align="left">
+@if(index > 1) {
+<li class="prev">
+<a href="javascript:void(0)" onclick="changePage(@index-1)"><font color="black"> Prev &larr;</font></a>
+</li>
+} else {
+<li class="prev disabled">
+<a><font color="black">&larr;<font></a>
+</li>
+}
+</td>
+<td style="width:700px">
+<li class="current">
+<a><font color="black">Sellers @((index-1)*5 + 1) - @(till + 1) of @vendor.size()</font></a>
+</li>
+</td>
+<td style="width:50px" align="right">
+@if(index < last){
+<li class="next">
+<!--a href="@routes.Order.page(index+1)"--><a href="javascript:void(0)" style="text-color:white;" onclick="changePage(@index+1)"><font color="black"> Next &rarr;</font></a>
+</li>
+} else {
+<li class="next disabled">
+<a><font color="black">&rarr;</font></a>
+</li>
+}
+</td>
+</tr>
+</table>
+</ul>
+</div>
+</div>
+<!--/div-->

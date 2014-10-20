@@ -18,8 +18,11 @@ import play.db.jpa.Transactional;
 import play.db.jpa.JPA.*;
 import play.db.jpa.*;
 import javax.persistence.EntityManager.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 @Entity
+@Table(name = "cuisine")
 public class Cuisine {
 @Id
 public Long id;
@@ -27,14 +30,16 @@ public String name;
 @ManyToMany(mappedBy="cuis")
 public List<Vendor> vendors;
 public static List<String> cuisines;
-private static List<Cuisine> cuis = new LinkedList<Cuisine>();
+private static List<Cuisine> cuis = new ArrayList<Cuisine>();
+public static Arrays cuisns[] = new Arrays[20];
+public static String cuisin;
 
 //public static Finder<Long, Cuisine>  find = new Finder (Long.class, Cuisine.class);
 
 public Cuisine() {
 }
 
-public Cuisine(Long id, String name, Collection<Vendor> vendors, List<Cuisine> cuisines) {
+public Cuisine(Long id, String name, Collection<Vendor> vendors) {
 this.id=id;
 this.name=name;
 this.vendors=new LinkedList<Vendor>(vendors);
